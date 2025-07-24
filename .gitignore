@@ -48,3 +48,30 @@ jobs/**/*workspace
 
 # As a result, only Jenkins settings and job config.xml files in JENKINS_HOME
 # will be tracked by git.
+
+# Terraform state
+*.tfstate
+*.tfstate.backup
+
+# Crash log
+crash.log
+
+# Terraform variable overrides
+*.tfvars
+*.tfvars.json
+
+# Local terraform files
+.terraform/
+.terraform.lock.hcl
+
+# Sensitive or temp files
+*.pem
+*.key
+*.zip
+*.log
+
+# Editor/OS specific
+.DS_Store
+.idea/
+.vscode/
+*.swp
