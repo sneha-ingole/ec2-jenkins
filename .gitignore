@@ -61,7 +61,7 @@ crash.log
 *.tfvars.json
 
 # Local terraform files
-.terraform/
+terraform/
 .terraform.lock.hcl
 
 # Sensitive or temp files
