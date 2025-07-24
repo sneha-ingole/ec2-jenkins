@@ -2,6 +2,12 @@
 
 This guide helps you set up Jenkins on an EC2 instance with Git and Docker integration.
 
+```
+git clone https://github.com/atulkamble/ec2-jenkins.git
+cd ec2-jenkins
+chmod +x deploy.sh
+./deploy.sh
+```
 ---
 
 ## 📌 Prerequisites
