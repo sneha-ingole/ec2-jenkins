@@ -16,55 +16,59 @@ resource "local_file" "private_key" {
   directory_permission = "0700"
 }
 
-# Create AWS key pair using public key
+# Create AWS key pair using the generated public key
 resource "aws_key_pair" "jenkins_key" {
   key_name   = "jenkins"
   public_key = tls_private_key.jenkins.public_key_openssh
 }
 
-# Jenkins security group
+# Security group allowing HTTP, HTTPS, SSH, and Jenkins port
 resource "aws_security_group" "jenkins_sg" {
   name        = "jenkins"
   description = "Allow HTTP, HTTPS, Jenkins, and SSH"
 
-  ingress = [
-    {
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    },
-    {
-      from_port   = 80
-      to_port     = 80
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    },
-    {
-      from_port   = 443
-      to_port     = 443
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    },
-    {
-      from_port   = 8080
-      to_port     = 8080
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  ]
+  ingress {
+    description = "Allow SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-  egress = [
-    {
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  ]
+  ingress {
+    description = "Allow HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow Jenkins UI"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
-# Latest Amazon Linux 2 AMI
+# Fetch latest Amazon Linux 2 AMI
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -75,7 +79,7 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# EC2 instance
+# Launch EC2 instance with Jenkins
 resource "aws_instance" "jenkins_ec2" {
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t3.large"
