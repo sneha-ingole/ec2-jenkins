@@ -1,77 +1,84 @@
-# Learn more about Jenkins and JENKINS_HOME directory for which this file is
-# intended.
-#
-#  http://jenkins-ci.org/
-#  https://wiki.jenkins-ci.org/display/JENKINS/Administering+Jenkins
-#
-# Note: secret.key is purposefully not tracked by git. This should be backed up
-# separately because configs may contain secrets which were encrypted using the
-# secret.key.  To back up secrets use 'tar -czf /tmp/secrets.tgz secret*' and
-# save the file separate from your repository.  If you want secrets backed up
-# with configuration, then see the bottom of this file for an example.
+################################################################################
+# Jenkins-specific ignores
+# Learn more: https://www.jenkins.io/doc/book/managing/
+################################################################################
 
-# Ignore all JENKINS_HOME except jobs directory, root xml config, and
-# .gitignore file.
+# Ignore everything in JENKINS_HOME except:
+# - jobs directory
+# - root-level *.xml configs
+# - .gitignore itself
 /*
 !/jobs
-!/.gitignore
 !/*.xml
+!/.gitignore
 
-# Ignore all files in jobs subdirectories except for folders.
-# Note: git doesn't track folders, only file content.
+# Allow folder tracking in jobs (git doesn't track empty dirs)
 jobs/**
 !jobs/**/
 
-# Uncomment the following line to save next build numbers with config.
-
+# Optional: uncomment to include next build numbers
 #!jobs/**/nextBuildNumber
 
-# For performance reasons, we want to ignore builds in Jenkins jobs because it
-# contains many tiny files on large installations.  This can impact git
-# performance when running even basic commands like 'git status'.
+# Ignore builds and indexing (many small files = slow git performance)
 builds
 indexing
 
-# Exclude only config.xml files in repository subdirectories.
-!config.xml
-
-# Don't track workspaces (when users build on the master).
+# Don't track workspaces
 jobs/**/*workspace
 
-# Security warning: If secrets are included with your configuration, then an
-# adversary will be able to decrypt all encrypted secrets within Jenkins
-# config.  Including secrets is a bad practice, but the example is included in
-# case someone still wants it for convenience.  Uncomment the following line to
-# include secrets for decryption with repository configuration in Git.
+# Only include config.xml files
+!config.xml
 
+# Ignore Jenkins secrets (SECURITY RISK if tracked)
 #!/secret*
 
-# As a result, only Jenkins settings and job config.xml files in JENKINS_HOME
-# will be tracked by git.
+################################################################################
+# Terraform-specific ignores
+################################################################################
 
-# Terraform state
+# Terraform state files
 *.tfstate
+*.tfstate.*
 *.tfstate.backup
 
-# Crash log
-crash.log
-
-# Terraform variable overrides
+# Variable definition files (typically local)
 *.tfvars
 *.tfvars.json
 
-# Local terraform files
+# Terraform logs and caches
+.terraform/
 terraform/
+.terraform.log
 .terraform.lock.hcl
 
-# Sensitive or temp files
+# Crash logs
+crash.log
+
+################################################################################
+# Security-sensitive or generated files
+################################################################################
+
+# SSH keys and credentials
 *.pem
 *.key
+
+# Misc
 *.zip
 *.log
+*.backup
+.env
 
-# Editor/OS specific
+################################################################################
+# Editor & OS-specific
+################################################################################
+
+# macOS
 .DS_Store
+
+# IDEs
 .idea/
 .vscode/
+
+# Swap/temp files
 *.swp
+*.sh~
