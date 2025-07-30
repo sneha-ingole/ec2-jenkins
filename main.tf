@@ -2,13 +2,11 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Generate SSH key pair
 resource "tls_private_key" "jenkins" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-# Save private key locally
 resource "local_file" "private_key" {
   content              = tls_private_key.jenkins.private_key_pem
   filename             = "${path.module}/jenkins.pem"
@@ -16,19 +14,17 @@ resource "local_file" "private_key" {
   directory_permission = "0700"
 }
 
-# Create AWS key pair using the generated public key
 resource "aws_key_pair" "jenkins_key" {
   key_name   = "jenkins"
   public_key = tls_private_key.jenkins.public_key_openssh
 }
 
-# Security group allowing HTTP, HTTPS, SSH, and Jenkins port
 resource "aws_security_group" "jenkins_sg" {
   name        = "jenkins"
   description = "Allow HTTP, HTTPS, Jenkins, and SSH"
 
   ingress {
-    description = "Allow SSH"
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -36,7 +32,7 @@ resource "aws_security_group" "jenkins_sg" {
   }
 
   ingress {
-    description = "Allow HTTP"
+    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -44,7 +40,7 @@ resource "aws_security_group" "jenkins_sg" {
   }
 
   ingress {
-    description = "Allow HTTPS"
+    description = "HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -52,7 +48,7 @@ resource "aws_security_group" "jenkins_sg" {
   }
 
   ingress {
-    description = "Allow Jenkins UI"
+    description = "Jenkins UI"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
@@ -60,7 +56,7 @@ resource "aws_security_group" "jenkins_sg" {
   }
 
   egress {
-    description = "Allow all outbound traffic"
+    description = "All outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -68,20 +64,8 @@ resource "aws_security_group" "jenkins_sg" {
   }
 }
 
-# Fetch latest Amazon Linux 2 AMI
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
-}
-
-# Launch EC2 instance with Jenkins
 resource "aws_instance" "jenkins_ec2" {
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = "ami-08a6efd148b1f7504" # Amazon Linux 2023
   instance_type               = "t3.large"
   key_name                    = aws_key_pair.jenkins_key.key_name
   vpc_security_group_ids      = [aws_security_group.jenkins_sg.id]
@@ -98,6 +82,7 @@ resource "aws_instance" "jenkins_ec2" {
 
   user_data = <<-EOF
               #!/bin/bash
+              yum update -y
               yum install -y git
               curl -o /tmp/deploy.sh https://raw.githubusercontent.com/atulkamble/ec2-jenkins/main/deploy.sh
               chmod +x /tmp/deploy.sh
