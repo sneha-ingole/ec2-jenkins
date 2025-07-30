@@ -80,7 +80,7 @@ resource "aws_instance" "jenkins_ec2" {
     Name = "jenkins"
   }
 
-  user_data = <<-EOF
+user_data = <<-EOF
               #!/bin/bash
               yum update -y
               yum install -y git
