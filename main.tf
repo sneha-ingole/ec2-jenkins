@@ -74,24 +74,22 @@ resource "aws_instance" "jenkins" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo yum clean all",
       "sudo yum update -y",
-      "sudo yum install -y git docker maven wget dnf",
-      "git config --global user.name \"Atul Kamble\"",
-      "git config --global user.email \"atul_kamble@hotmail.com\"",
+      "sudo yum install -y git docker",
       "sudo systemctl start docker",
       "sudo systemctl enable docker",
-      "sudo usermod -aG docker ec2-user",
-      "sudo dnf install java-21-amazon-corretto -y",
-      "java --version",
-      "wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo",
+      "sudo dnf install -y java-21-amazon-corretto",
       "sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key",
+      "sudo curl -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo",
       "sudo yum upgrade -y",
       "sudo yum install -y jenkins",
-      "jenkins --version || echo 'Jenkins installed'",
-      "sudo systemctl start jenkins",
-      "sudo systemctl enable jenkins"
+      "sudo usermod -aG docker jenkins",
+      "sudo systemctl daemon-reexec",
+      "sudo systemctl enable jenkins",
+      "sudo systemctl start jenkins"
     ]
+  }
+
 
     connection {
       type        = "ssh"
