@@ -87,6 +87,8 @@ resource "aws_instance" "jenkins" {
       "sudo systemctl daemon-reexec",
       "sudo systemctl enable jenkins",
       "sudo systemctl start jenkins"
+      "echo 'Jenkins Admin Password:'",
+      "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"
     ]
   }
 
