@@ -98,4 +98,3 @@ resource "aws_instance" "jenkins" {
       host        = self.public_ip
     }
   }
-}
