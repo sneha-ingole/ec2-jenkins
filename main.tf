@@ -2,11 +2,13 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# Generate SSH key pair
 resource "tls_private_key" "jenkins" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
+# Save private key to local file
 resource "local_file" "private_key" {
   content              = tls_private_key.jenkins.private_key_pem
   filename             = "${path.module}/jenkins.pem"
@@ -14,14 +16,16 @@ resource "local_file" "private_key" {
   directory_permission = "0700"
 }
 
+# Create AWS key pair
 resource "aws_key_pair" "jenkins_key" {
   key_name   = "jenkins"
   public_key = tls_private_key.jenkins.public_key_openssh
 }
 
+# Security Group for EC2
 resource "aws_security_group" "jenkins_sg" {
   name        = "jenkins"
-  description = "Allow HTTP, HTTPS, Jenkins, and SSH"
+  description = "Allow SSH, HTTP, HTTPS, Jenkins"
 
   ingress {
     description = "SSH"
@@ -48,7 +52,7 @@ resource "aws_security_group" "jenkins_sg" {
   }
 
   ingress {
-    description = "Jenkins UI"
+    description = "Jenkins"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
@@ -64,6 +68,7 @@ resource "aws_security_group" "jenkins_sg" {
   }
 }
 
+# EC2 instance with remote-exec
 resource "aws_instance" "jenkins_ec2" {
   ami                         = "ami-08a6efd148b1f7504" # Amazon Linux 2023
   instance_type               = "t3.large"
@@ -80,12 +85,43 @@ resource "aws_instance" "jenkins_ec2" {
     Name = "jenkins"
   }
 
-user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              yum install -y git
-              curl -o /tmp/deploy.sh https://raw.githubusercontent.com/atulkamble/ec2-jenkins/main/deploy.sh
-              chmod +x /tmp/deploy.sh
-              bash /tmp/deploy.sh
-              EOF
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum clean all",
+      "sudo yum update -y",
+      "sudo yum install -y git docker maven wget dnf",
+      "git config --global user.name \"Atul Kamble\"",
+      "git config --global user.email \"atul_kamble@hotmail.com\"",
+      "sudo systemctl start docker",
+      "sudo systemctl enable docker",
+      "sudo usermod -aG docker ec2-user",
+      "sudo dnf install java-21-amazon-corretto -y",
+      "wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo",
+      "sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key",
+      "sudo yum upgrade -y",
+      "sudo yum install -y jenkins",
+      "sudo systemctl start jenkins",
+      "sudo systemctl enable jenkins"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = tls_private_key.jenkins.private_key_pem
+      host        = self.public_ip
+    }
+  }
+
+  # Wait until SSH is ready
+  provisioner "file" {
+    content     = "Jenkins setup complete"
+    destination = "/tmp/jenkins_status.txt"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = tls_private_key.jenkins.private_key_pem
+      host        = self.public_ip
+    }
+  }
 }
