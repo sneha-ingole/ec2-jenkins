@@ -75,7 +75,7 @@ resource "aws_instance" "jenkins" {
   provisioner "remote-exec" {
     inline = [
       "sudo yum update -y",
-      "sudo yum install -y git docker",
+      "sudo yum install -y git docker maven",
       "sudo systemctl start docker",
       "sudo systemctl enable docker",
       "sudo dnf install -y java-21-amazon-corretto",
