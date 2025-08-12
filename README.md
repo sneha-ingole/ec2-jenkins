@@ -8,6 +8,24 @@ cd ec2-jenkins
 chmod +x deploy.sh
 ./deploy.sh
 ```
+# Jenkins using docker
+```
+// commands after ssh 
+sudo yum update -y
+sudo yum install docker 
+sudo systemctl start docker 
+sudo systemctl enable docker 
+docker --version 
+sudo docker login 
+sudo docker images
+sudo docker pull jenkins/jenkins:jdk21
+sudo docker run -d -p 8080:8080 jenkins/jenkins:jdk21
+// browse http://instance-ip:8080
+// list containers 
+sudo docker container ls        // da6e91230c61
+// copy passowrd and paste it 
+sudo docker exec -it da6e91230c61 cat /var/jenkins_home/secrets/initialAdminPassword
+```
 ---
 
 ## 📌 Prerequisites
