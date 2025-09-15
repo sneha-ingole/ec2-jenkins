@@ -82,6 +82,8 @@ sudo systemctl enable docker
 
 ```bash
 sudo dnf install java-21-amazon-corretto -y
+or
+sudo yum install fontconfig java-21-openjdk
 java --version
 ```
 
