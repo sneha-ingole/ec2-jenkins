@@ -68,6 +68,12 @@ resource "aws_instance" "jenkins" {
   key_name               = aws_key_pair.jenkins_key.key_name
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
 
+  root_block_device {
+    volume_size           = 40
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
   tags = {
     Name = "Jenkins"
   }
@@ -93,10 +99,10 @@ resource "aws_instance" "jenkins" {
   }
 
 
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = tls_private_key.jenkins.private_key_pem
-      host        = self.public_ip
-    }
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = tls_private_key.jenkins.private_key_pem
+    host        = self.public_ip
   }
+}
