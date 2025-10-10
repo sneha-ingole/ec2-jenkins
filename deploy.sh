@@ -35,3 +35,21 @@ sudo systemctl enable jenkins
 # Print Jenkins and Maven versions
 jenkins --version || echo "Jenkins installed"
 mvn -v
+
+# Fetch instance public IP from AWS instance metadata (if running on EC2) and print Jenkins URL
+if command -v curl >/dev/null 2>&1; then
+	# IMDSv2 token
+	TOKEN=$(curl -s -m 5 -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60") || TOKEN=""
+	if [ -n "$TOKEN" ]; then
+		PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
+	else
+		PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+	fi
+	if [ -n "$PUBLIC_IP" ]; then
+		echo "Jenkins UI: http://$PUBLIC_IP:8080"
+	else
+		echo "Jenkins UI: http://<public-ip>:8080  (public IP not found via instance metadata)"
+	fi
+else
+	echo "curl not available; cannot query instance metadata for public IP. Jenkins UI: http://<instance-ip>:8080"
+fi
