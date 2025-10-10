@@ -53,3 +53,40 @@ if command -v curl >/dev/null 2>&1; then
 else
 	echo "curl not available; cannot query instance metadata for public IP. Jenkins UI: http://<instance-ip>:8080"
 fi
+
+	# Install recommended Jenkins plugins (docker, docker-pipeline, Blue Ocean)
+	# Uses jenkins-plugin-cli (bundled with recent Jenkins packages). Run as root so it can write to JENKINS_HOME.
+	if command -v jenkins-plugin-cli >/dev/null 2>&1; then
+		echo "Installing Jenkins plugins: docker-plugin, docker-workflow, blueocean"
+		# retry a couple times in case network is flaky
+		for attempt in 1 2 3; do
+			if jenkins-plugin-cli --plugins docker-plugin docker-workflow blueocean; then
+				echo "Plugins installed successfully"
+				break
+			else
+				echo "Plugin install attempt $attempt failed, retrying in 5s..."
+				sleep 5
+			fi
+		done
+	else
+		echo "jenkins-plugin-cli not found. Attempting to install plugins by placing .hpi files is unsupported in this script."
+		echo "If plugins are required, install jenkins-plugin-cli or manually add plugins to /var/lib/jenkins/plugins and restart Jenkins."
+	fi
+
+	# Restart Jenkins to load new plugins and wait until the HTTP endpoint responds
+	sudo systemctl restart jenkins
+	echo "Waiting for Jenkins to become available on localhost:8080"
+	for i in 1 30; do
+		if command -v curl >/dev/null 2>&1 && curl -sSf http://127.0.0.1:8080 >/dev/null 2>&1; then
+			echo "Jenkins is up"
+			break
+		fi
+		echo "Waiting... ($i/30)"
+		sleep 5
+	done
+
+	# Print initial admin password (if still present)
+	if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
+		echo "Jenkins Admin Password:"
+		sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+	fi
