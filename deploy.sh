@@ -1,8 +1,28 @@
 #!/bin/bash
 
-# Update system and install required packages
+# Auto-install tools toggle: set INSTALL_TOOLS=false to skip automatic installation
+INSTALL_TOOLS=${INSTALL_TOOLS:-true}
+echo "INSTALL_TOOLS=$INSTALL_TOOLS"
+
+# Update system
 sudo yum update -y
-sudo yum install -y git docker maven wget
+
+# Install common tools if enabled
+if [ "$INSTALL_TOOLS" = "true" ] || [ "$INSTALL_TOOLS" = "1" ]; then
+	echo "Installing tools: git, docker, maven, ant, wget"
+	# Install packages via yum (idempotent)
+	sudo yum install -y git docker maven ant wget || true
+
+	# Install Amazon Corretto 21 (Java) if not already present or not Corretto
+	if ! command -v java >/dev/null 2>&1 || ! java -version 2>&1 | grep -qi "Corretto"; then
+		echo "Installing Amazon Corretto 21 (Java)"
+		sudo dnf install -y java-21-amazon-corretto || echo "Failed to install Corretto via dnf"
+	else
+		echo "Java (Corretto) already installed"
+	fi
+else
+	echo "Skipping automatic tool installation (INSTALL_TOOLS=$INSTALL_TOOLS)"
+fi
 
 # Git configuration
 git --version
@@ -10,17 +30,23 @@ git config --global user.name "Atul Kamble"
 git config --global user.email "atul_kamble@hotmail.com"
 git config --list
 
-# Start and enable Docker
-sudo systemctl start docker
-sudo systemctl enable docker
+# Start and enable Docker if installed
+if command -v docker >/dev/null 2>&1; then
+	sudo systemctl start docker
+	sudo systemctl enable docker
+	# Add ec2-user and jenkins to docker group (ignore errors if users don't exist yet)
+	sudo usermod -aG docker ec2-user || true
+	sudo usermod -aG docker jenkins || true
+else
+	echo "Docker not installed or not in PATH; skipping docker service start/group modification"
+fi
 
-# Add ec2-user and jenkins to docker group
-sudo usermod -aG docker ec2-user
-sudo usermod -aG docker jenkins
-
-# Install Amazon Corretto 21 (Java)
-sudo dnf install java-21-amazon-corretto -y
-java --version
+# Print Java version
+if command -v java >/dev/null 2>&1; then
+	java --version
+else
+	echo "Java not found"
+fi
 
 # Install Jenkins
 sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
