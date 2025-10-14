@@ -102,7 +102,8 @@ fi
 	# Restart Jenkins to load new plugins and wait until the HTTP endpoint responds
 	sudo systemctl restart jenkins
 	echo "Waiting for Jenkins to become available on localhost:8080"
-	for i in 1 30; do
+	# Use a proper loop range to wait up to ~150s (30 * 5s)
+	for i in {1..30}; do
 		if command -v curl >/dev/null 2>&1 && curl -sSf http://127.0.0.1:8080 >/dev/null 2>&1; then
 			echo "Jenkins is up"
 			break
@@ -111,8 +112,21 @@ fi
 		sleep 5
 	done
 
-	# Print initial admin password (if still present)
-	if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
-		echo "Jenkins Admin Password:"
-		sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+	# At the very end, attempt to print the initial admin password (with retries)
+	PASSWORD_FILE=/var/lib/jenkins/secrets/initialAdminPassword
+	echo "Attempting to print Jenkins initial admin password (if available) at: $PASSWORD_FILE"
+	# Retry for up to 2 minutes (24 * 5s)
+	for i in {1..24}; do
+		if [ -f "$PASSWORD_FILE" ]; then
+			echo "=== Jenkins initialAdminPassword ==="
+			sudo cat "$PASSWORD_FILE" || echo "Failed to read $PASSWORD_FILE with sudo"
+			echo "=== end ==="
+			break
+		fi
+		echo "Password file not present yet, retrying... ($i/24)"
+		sleep 5
+	done
+	if [ ! -f "$PASSWORD_FILE" ]; then
+		echo "Password file still not found at $PASSWORD_FILE after waiting. You can retrieve it manually on the server with:"
+		echo "  sudo cat $PASSWORD_FILE"
 	fi
