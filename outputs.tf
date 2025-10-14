@@ -10,7 +10,7 @@ output "ssh_connection_command" {
 
 output "jenkins_admin_password_command" {
   description = "SSH command to print the Jenkins initial admin password from the instance (run locally)"
-  value       = "ssh -i jenkins.pem ec2-user@${aws_instance.jenkins.public_ip} \"sudo cat /var/lib/jenkins/secrets/initialAdminPassword\""
+  value       = "ssh -i jenkins.pem ec2-user@${aws_instance.jenkins.public_ip} 'sudo cat /var/lib/jenkins/secrets/initialAdminPassword'"
 }
 
 output "jenkins_url" {
