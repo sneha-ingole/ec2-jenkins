@@ -67,6 +67,7 @@ resource "aws_instance" "jenkins" {
   instance_type          = "t3.large"
   key_name               = aws_key_pair.jenkins_key.key_name
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
+  associate_public_ip_address = true
 
   tags = {
     Name = "Jenkins"
