@@ -83,7 +83,7 @@ resource "aws_instance" "jenkins" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("${path.module}/jenkins.pem")
+      private_key = tls_private_key.jenkins.private_key_pem
       host        = self.public_ip
       timeout     = "5m"
     }
