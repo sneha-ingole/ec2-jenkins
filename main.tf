@@ -79,6 +79,14 @@ resource "aws_instance" "jenkins" {
   }
 
   provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file("${path.module}/jenkins.pem")
+      host        = self.public_ip
+      timeout     = "5m"
+    }
+    
     inline = [
       "sudo yum update -y",
       "sudo yum install -y git docker maven",
